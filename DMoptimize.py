@@ -8,7 +8,7 @@ import logging
 
 class Optimize(ABC):
     
-    def __init__(self, const_dict, steric_dict, energy_dict_base, file_input_data, loss_func, max_time=7, print_flag=True):
+    def __init__(self, const_dict, steric_dict, energy_dict_base, file_input_data, loss_func, input_dim, max_time=7, print_flag=True, max_buffer_size=10_000):
         
         self.system = DMsim.SurfaceKineticsSimulator(const_dict, steric_dict, file_input_data)
         self.input_data_dict, self.recProbExp_vec = self.system.prepare_data()
@@ -19,6 +19,8 @@ class Optimize(ABC):
         self.max_time = max_time
         
         self.print_flag = print_flag
+        self.nb_calls = 0
+        self.buffer = np.empty((max_buffer_size, input_dim + 1))
     
     
     @abstractmethod
@@ -29,6 +31,7 @@ class Optimize(ABC):
     
     
     def functional_loss(self, params):
+        ##* fix loss function declaration
         
         loss_vec = np.zeros(len(self.input_data_dict))
         for i in range(len(self.input_data_dict)):
@@ -37,17 +40,26 @@ class Optimize(ABC):
             _, recProb_aux, _, sucess = self.system.solve_system(self.input_data_dict[i], energy_dict_new, solver="fixed_point", max_time=self.max_time)
             
             if sucess == True:
-                loss_vec[i] = self.loss_func(np.sum(recProb_aux), self.recProbExp_vec[i])
+                
+                value_vec = (np.sum(recProb_aux) - self.recProbExp_vec[i])/self.recProbExp_vec[i]
+                loss_vec[i] = self.loss_func(value_vec)
+                
+                # loss_vec[i] = self.loss_func(np.sum(recProb_aux)-self.recProbExp_vec[i])
             else: 
                 logging.warning(f"Simulation failed for index {i}. Assigning high loss.")
                 loss_vec[i] = 1e6
                 
-        value = np.sum(loss_vec)
+        # value = np.sum(loss_vec)
+        value = np.mean(loss_vec)
         
-        if self.print_flag:
+        self.nb_calls += 1
+        self.buffer[self.nb_calls % len(self.buffer), :] = [value] + params.tolist()
+        
+        if self.print_flag and self.nb_calls % 5 == 0:
             print("Loss: ", value, "Params: ", params)
         
         return value
+    
     
     
     def hybrid_search(self, config):
@@ -57,10 +69,13 @@ class Optimize(ABC):
         de_maxiter = config["de_maxiter"]
         local_attempts = config["local_attempts"]
         epsilon_local = config["epsilon_local"]
+        top_k = config["top_k"]
         
         candidates = []
         for _ in range(nb_de_calls):
             result = sp.optimize.differential_evolution(self.functional_loss, bounds, polish=True, disp=True, maxiter=de_maxiter)
+            
+
             candidates.append(result.x)
             
             if self.print_flag:
@@ -78,32 +93,48 @@ class Optimize(ABC):
             print()
         
         bounds_array = np.array(bounds)
+    
+        k_local = top_k if top_k < nb_de_calls else nb_de_calls
         
-        best_local = best_candidate
-        best_local_loss = np.min(candidates_losses)
+        ### chose the k best candidates
+        idx_best_candidates = np.argsort(candidates_losses)[:k_local]
+        best_candidates = np.array([candidates[i] for i in idx_best_candidates])
+        best_candidates_losses = np.array([candidates_losses[i] for i in idx_best_candidates])
+        
+        
+        best_local = best_candidates[np.argmin(best_candidates_losses)]
+        best_local_loss = np.min(best_candidates_losses)
+        
+        
         
         if self.print_flag:
-            print("best_local_loss: ", best_local_loss)
-            print("best_local: ", best_local)
+            print("best_local_loss: ", best_candidates_losses)
+            print("best_local: ", best_candidates)
         
-        for attempt in range(local_attempts):
-            
-            perturbation = np.random.uniform(-epsilon_local, epsilon_local, len(best_candidate))
-            x0 = best_local + perturbation
+        for best_candidate, best_candidate_loss in zip(best_candidates, best_candidates_losses):
+        
+            for attempt in range(local_attempts):
+                
+                perturbation = np.random.uniform(-epsilon_local, epsilon_local, len(best_candidate))
+                x0 = best_local + perturbation
 
-            ### check bounds
-            x0 = np.maximum(x0, bounds_array[:, 0]) 
-            x0 = np.minimum(x0, bounds_array[:, 1])
-            
-            # local_result = sp.optimize.minimize(self.functional_loss, x0, method="Nelder-Mead", bounds=bounds)
-            local_result = sp.optimize.minimize(self.functional_loss, x0, method="L-BFGS-B", bounds=bounds)
-            
-            if self.print_flag:
-                print("Local Search Attempt: ", attempt, "Loss: ", local_result.fun, "Params: ", local_result.x)
-                print()
-            
-            if local_result.fun < best_local_loss:
-                best_local_loss = local_result.fun
-                best_local = local_result.x
+                ### check bounds
+                x0 = np.maximum(x0, bounds_array[:, 0]) 
+                x0 = np.minimum(x0, bounds_array[:, 1])
+                
+                # local_result = sp.optimize.minimize(self.functional_loss, x0, method="Nelder-Mead", bounds=bounds)
+                local_result = sp.optimize.minimize(self.functional_loss, x0, method="L-BFGS-B", bounds=bounds)
+                
+                if self.print_flag:
+                    print("Local Search Attempt: ", attempt, "Loss: ", local_result.fun, "Params: ", local_result.x)
+                    print()
+                
+                if local_result.fun < best_local_loss:
+                    best_local_loss = local_result.fun
+                    best_local = local_result.x
+        
+        ### trim buffer
+        self.buffer = self.buffer[:self.nb_calls, :]
         
         return best_local, best_local_loss
+    

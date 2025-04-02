@@ -10,39 +10,13 @@ import time
 if __name__ == "__main__":
     
     ###! Free parameters
-    ###* Optimized Version
-    # A = 0.06815468
-    # B = 0.00013756
-    
-    # #! v2
-    # A = 0.10519756
-    # B = 0.00013952
-    
-    # ###* Upgraded Version Paper
-    # A = 0.01634
-    # B = 1.67e-4
-    # E_nu_d = 19.75
-
-    
-    # A = 5.74040394e-03
-    # B = 6.02475063e-04
-    # E_nu_d = 1.69206221e+01
-    
-    A = 7.35077906e-02 
-    B = 1.01176303e-02 
-    E_nu_d = 1.06015483e+01
-    
-    
-    A = 0.10127555 
-    B =0.00015458
+    A = 0.01634
+    B = 1.67e-4
     E_nu_d = 19.75
     
-    A = 0.07216712 
-    B = 0.00015201
-    
-    A = 2.74332762e-03
-    B= 6.23703570e-04
-    E_nu_d = 1.68496853e+01
+    # A = 5.74040394e-03 
+    # B = 6.02475063e-04 
+    # E_nu_d = 1.69206221e+01
     
     
     
@@ -51,9 +25,8 @@ if __name__ == "__main__":
     
     
     file_input_data = "Experimental_data_Paper.hdf5"
-    output_file = "results_TDPaperOptimizedScript.hdf5"
-    
-    # output_file = "results_TDPaperUpgradedLow.hdf5"
+    output_file = "results_TDPaperOptimized2.hdf5"
+    # output_file = "results_TDPaperOptimizedScript.hdf5"
     
     output_file = os.path.join("simulations", output_file)
     

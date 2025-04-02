@@ -10,50 +10,28 @@ import time
 if __name__ == "__main__":
     
     ###! Free parameters
-    ###* Optimized Version
-    # A = 0.06815468
-    # B = 0.00013756
     
-    # #! v2
-    # A = 0.10519756
-    # B = 0.00013952
-    
-    # ###* Upgraded Version Paper
+    # # ###* Version Paper
     # A = 0.01634
     # B = 1.67e-4
-    # E_nu_d = 19.75
-
     
-    # A = 5.74040394e-03
-    # B = 6.02475063e-04
-    # E_nu_d = 1.69206221e+01
-    
-    A = 7.35077906e-02 
-    B = 1.01176303e-02 
-    E_nu_d = 1.06015483e+01
-    
-    
-    A = 0.10127555 
-    B =0.00015458
-    E_nu_d = 19.75
-    
-    A = 0.07216712 
-    B = 0.00015201
+    ###* Upgraded Version Paper V2
     
     A = 2.74332762e-03
-    B= 6.23703570e-04
+    B = 6.23703570e-04 
     E_nu_d = 1.68496853e+01
     
-    
-    
+    Ealpha = 3.26673523e+03 
+    Emin = 2.70000000e+00 
+    ED_db = 1.00000000e+01
     
     nu_d_func = lambda Tw, A, B, E_nu_d: 1e15 * (A + B * np.exp(E_nu_d /(const_dict["R"] * Tw)))
     
     
     file_input_data = "Experimental_data_Paper.hdf5"
-    output_file = "results_TDPaperOptimizedScript.hdf5"
+    output_file = "results_TDPaperWithLowPressureOptimizedCheck.hdf5"
     
-    # output_file = "results_TDPaperUpgradedLow.hdf5"
+    # output_file = "results_TDPaperUpgradedLowV5.hdf5"
     
     output_file = os.path.join("simulations", output_file)
     
@@ -68,25 +46,7 @@ if __name__ == "__main__":
     }
     
     
-    #########* Steric factors reactions
-    steric_dict = {
-        ###* Atomic oxygen
-        "SF_O_F": 1.0, "SF_O_S": 1.0, "SF_O_SO": 1.0, "SF_O_FO": 1.0,
-        "SF_FO_S": 1.0, "SF_FO_SO": 1.0, "SF_FO_FO": 1.0, "SF_FO": 1.0,
-        
-        ###* Molecular oxygen
-        "SF_O2_F": 1.0, "SF_O2_FO": 1.0, "SF_O2_FO2": 1.0, "SF_O_FO2": 1.0,
-        "SF_FO2_FO": 1.0, "SF_FO_FO2": 1.0, "SF_FO2": 1.0,
-        
-        ###* Metastable species
-        "SF_O2fast_SO": 0.0, "SF_Ofast_SO": 0.0, "SF_O2fast_S": 0.0,  "SF_Ofast_S": 0.0,
-        "SF_Ofast_Sdb": 0.0, "SF_Ofast_SOdb": 0.0, "SF_O2fast_Sdb": 0.0, "SF_O2fast_SOdb": 0.0,
-        "SF_O_Sdb": 0.0, "SF_O_SOdb": 0.0, "SF_FO_SOdb": 0.0, "SF_FO_Sdb": 0.0,
-    }
-    
-    
-    ##! Include the metastable species
-    
+    # #########* Steric factors reactions
     # steric_dict = {
     #     ###* Atomic oxygen
     #     "SF_O_F": 1.0, "SF_O_S": 1.0, "SF_O_SO": 1.0, "SF_O_FO": 1.0,
@@ -97,10 +57,28 @@ if __name__ == "__main__":
     #     "SF_FO2_FO": 1.0, "SF_FO_FO2": 1.0, "SF_FO2": 1.0,
         
     #     ###* Metastable species
-    #     "SF_O2fast_SO": 1.0, "SF_Ofast_SO": 1.0, "SF_O2fast_S": 1.0,  "SF_Ofast_S": 1.0,
-    #     "SF_Ofast_Sdb": 1.0, "SF_Ofast_SOdb": 1.0, "SF_O2fast_Sdb": 1.0, "SF_O2fast_SOdb": 1.0,
-    #     "SF_O_Sdb": 1.0, "SF_O_SOdb": 1.0, "SF_FO_SOdb": 1.0, "SF_FO_Sdb": 1.0,
+    #     "SF_O2fast_SO": 0.0, "SF_Ofast_SO": 0.0, "SF_O2fast_S": 0.0,  "SF_Ofast_S": 0.0,
+    #     "SF_Ofast_Sdb": 0.0, "SF_Ofast_SOdb": 0.0, "SF_O2fast_Sdb": 0.0, "SF_O2fast_SOdb": 0.0,
+    #     "SF_O_Sdb": 0.0, "SF_O_SOdb": 0.0, "SF_FO_SOdb": 0.0, "SF_FO_Sdb": 0.0,
     # }
+    
+    
+    ##! Include the metastable species
+    
+    steric_dict = {
+        ###* Atomic oxygen
+        "SF_O_F": 1.0, "SF_O_S": 1.0, "SF_O_SO": 1.0, "SF_O_FO": 1.0,
+        "SF_FO_S": 1.0, "SF_FO_SO": 1.0, "SF_FO_FO": 1.0, "SF_FO": 1.0,
+        
+        ###* Molecular oxygen
+        "SF_O2_F": 1.0, "SF_O2_FO": 1.0, "SF_O2_FO2": 1.0, "SF_O_FO2": 1.0,
+        "SF_FO2_FO": 1.0, "SF_FO_FO2": 1.0, "SF_FO2": 1.0,
+        
+        ###* Metastable species
+        "SF_O2fast_SO": 1.0, "SF_Ofast_SO": 1.0, "SF_O2fast_S": 1.0,  "SF_Ofast_S": 1.0,
+        "SF_Ofast_Sdb": 1.0, "SF_Ofast_SOdb": 1.0, "SF_O2fast_Sdb": 1.0, "SF_O2fast_SOdb": 1.0,
+        "SF_O_Sdb": 1.0, "SF_O_SOdb": 1.0, "SF_FO_SOdb": 1.0, "SF_FO_Sdb": 1.0,
+    }
     
     
     #########* Initialize the system
@@ -121,6 +99,7 @@ if __name__ == "__main__":
         "ED_db": 14.999,
         
         "nu_D": 1.0e13, "nu_d": 1.0e15,
+        
         "Emin": 2.90, # eV
         "Ealpha": 3400.0, # K
         
@@ -128,7 +107,9 @@ if __name__ == "__main__":
         # "Ealpha":  3.23383702e+03, # K
     }
     
-    # 3.23383702e+03 2.60000000e+00
+    energy_dict["Emin"] = Emin
+    energy_dict["Ealpha"] = Ealpha
+    energy_dict["ED_db"] = ED_db
     
     ###* Multiple Cases with the input data from .xlsx files
     data_dict, recProbExp_vec = system.prepare_data()    

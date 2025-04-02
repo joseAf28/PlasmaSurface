@@ -6,7 +6,7 @@ import time
 
 class SurfaceKineticsSimulator():
     
-    def __init__(self, const_dict, SF_dict, file_data="Experimental_data_TD.hdf5", init_conditions=[0.1, 0.1, 1.0, 0.0, 0.0], timeSpace=np.linspace(0, 500, 1_000)):
+    def __init__(self, const_dict, SF_dict, file_data="Experimental_data_TD.hdf5", init_conditions=[0.1, 0.1, 1.0, 0.0, 0.0], timeSpace=np.linspace(0, 1_00, 5_00)):
         self.const_dict = const_dict
         self.init_conditions = init_conditions
         self.timeSpace = timeSpace
@@ -19,7 +19,7 @@ class SurfaceKineticsSimulator():
         
         ### Read the experimental data from the hdf5 file
         data_dict = {}
-        with h5py.File("Experimental_data_TD.hdf5", "r") as file:
+        with h5py.File(self.file_exp_data, "r") as file:
             keys = list(file.keys())
             
             for key in keys:
@@ -37,6 +37,12 @@ class SurfaceKineticsSimulator():
         Recomb_prob_exp_vec = data_dict["recProbExp"]
         FluxIon_vec = 1e14 * data_dict["Current"]
         
+        
+        try: 
+            N_vec = data_dict["NExp"]
+        except:
+            N_vec = np.zeros_like(Tnw_vec)
+        
         #### EavgMB data
         p_data_exp = [0.2, 0.3, 0.4, 0.5, 0.6, 0.75, 1.5]
         EavgMB_data = [1.04, 0.91, 0.87, 0.83, 0.77, 0.5, 0.001]
@@ -48,7 +54,7 @@ class SurfaceKineticsSimulator():
         for i in range(len(Tnw_vec)):
             exp_vec.append({
                 "Tnw": Tnw_vec[i], "Tw": Tw_vec[i], "O_den": Oden_vec[i], "pressure": Pressure_vec[i],
-                "FluxIon": FluxIon_vec[i], "EavgMB": interpolator(Pressure_vec[i]).item(), "current": data_dict["Current"][i],
+                "FluxIon": FluxIon_vec[i], "EavgMB": interpolator(Pressure_vec[i]).item(), "current": data_dict["Current"][i], "N_den": N_vec[i]
             })
         
         return np.array(exp_vec, dtype=object), Recomb_prob_exp_vec
@@ -83,6 +89,7 @@ class SurfaceKineticsSimulator():
         E_di_O2, E_de_O2, E_FO_FO2 = energy_dict["E_di_O2"], energy_dict["E_de_O2"], energy_dict["E_FO_FO2"]
         nu_D_oxy2, nu_d_oxy2 = energy_dict["nu_D"], energy_dict["nu_d"]
         
+        
         ### Energy barriers with Oxygen Metastable
         E_O2fast_SO, E_O2fast_S = energy_dict["E_O2fast_SO"], energy_dict["E_O2fast_S"]
         E_O2fast_SOdb, E_O2fast_Sdb, E_Ofast_SOdb, E_Ofast_Sdb = energy_dict["E_O2fast_SOdb"], energy_dict["E_O2fast_Sdb"], energy_dict["E_Ofast_SOdb"], energy_dict["E_Ofast_Sdb"]
@@ -102,9 +109,16 @@ class SurfaceKineticsSimulator():
         SF_O_Sdb, SF_O_SOdb = self.SF_dict["SF_O_Sdb"], self.SF_dict["SF_O_SOdb"]
         SF_FO_SOdb, SF_FO_Sdb = self.SF_dict["SF_FO_SOdb"], self.SF_dict["SF_FO_Sdb"]
         
+        
         ### Auxiliar quantities
         FluxO = 0.25 * np.sqrt((8.0 * R * 1000 * Tnw)/(0.016 *  np.pi)) * exp_dict["O_den"] * 100
-        OdenN = exp_dict["pressure"] * 133.322368 * 1e-6 / (kBoltz * Tnw)
+        
+        if exp_dict["N_den"] > 0:
+            OdenN = exp_dict["N_den"]
+        else:
+            OdenN = exp_dict["pressure"] * 133.322368 * 1e-6 / (kBoltz * Tnw)
+        
+        
         OdenO2 = OdenN - exp_dict["O_den"]
         FluxO2 = 0.25 * np.sqrt((8.0 * R * 1000 * Tnw)/(0.032 *  np.pi)) * OdenO2 * 100
         
@@ -143,7 +157,7 @@ class SurfaceKineticsSimulator():
         ###* skip r13 for now: O_4(g) -> O_2(g) + O_2(g)
         r14 = SF_O_FO2 * FluxO / surface * np.exp(-E_O_FO2 / (R * Tnw))    # r13 paper Viegas et al. 2024
         r15a = SF_FO2_FO * nu_D_oxy2 * np.exp(-E_di_O2 / (R * Tw)) * np.exp(-E_FO2_FO / (R * Tw)) # r15 paper Viegas et al. 2024
-        r15b =  SF_FO_FO2 * nu_D_oxy2 * np.exp(-E_di_O2 / (R * Tw)) * np.exp(-E_FO_FO2 / (R * Tw)) # r16 paper Viegas et al. 2024
+        r15b = SF_FO_FO2 * nu_D_oxy2 * np.exp(-E_di_O2 / (R * Tw)) * np.exp(-E_FO_FO2 / (R * Tw)) # r16 paper Viegas et al. 2024
         
         rates_oxy_molecular_dict = {
             "r9": r9, "r10": r10, "r11": r11, "r12": r12, 
@@ -315,6 +329,7 @@ class SurfaceKineticsSimulator():
             atol=1e-5, rtol=1e-5,
             events=events
         )
+        
         refined_guess = sol_short.y.T[-1]
         
         ### Attempt to find the fixed point using the refined guess
@@ -360,13 +375,14 @@ class SurfaceKineticsSimulator():
         gamma_r8 = 2.0 * r8 * frac_Ofss * F0 * frac_Ofss / FluxO
         
         ###! Molecular Oxygen
-        gamma_r11 = 2.0 * r11 * frac_Ofss * F0 / FluxO2
-        gamma_r12 = 2.0 * r12 * frac_O2fss * F0 / FluxO2
-        gamma_r14 = 2.0 * r14 * frac_Ofss * F0 / FluxO
-        gamma_r15 = 2.0 * (r15a + r15b) * frac_O2fss * F0 * frac_Ofss / FluxO2
+        
+        gamma_r11 = r11 * frac_Ofss * F0 / FluxO
+        gamma_r12 = r12 * frac_O2fss * F0 / FluxO
+        gamma_r14 = r14 * frac_Ofss * F0 / FluxO
+        gamma_r15 = (r15a + r15b) * frac_O2fss * F0 * frac_Ofss / FluxO
         
         ####! Metastable Surface Kinetics
-        gamma_r23 = 2.0 * r23 * frac_Osdbss * S0 / FluxO2
+        gamma_r23 = 2.0 * r23 * frac_Osdbss * S0 / FluxO
         gamma_r24 = 2.0 * r24 * frac_Osdbss * S0 / FluxO
         gamma_r25 = 2.0 * r25 * frac_Osdbss * S0 / FluxO
         gamma_r27 = 2.0 * r27 * frac_Osdbss * S0 * frac_Ofss / FluxO

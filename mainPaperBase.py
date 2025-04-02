@@ -24,23 +24,24 @@ if __name__ == "__main__":
     
     #########* Steric factors reactions
     steric_dict = {
-        ###* Atomic oxygen
-        "SF_O_F": 1.0, "SF_O_S": 1.0, "SF_O_SO": 1.0, "SF_O_FO": 1.0,
-        "SF_FO_S": 1.0, "SF_FO_SO": 1.0, "SF_FO_FO": 1.0, "SF_FO": 1.0,
-        
-        ###* Molecular oxygen
-        "SF_O2_F": 0.0, "SF_O2_FO": 0.0, "SF_O2_FO2": 0.0, "SF_O_FO2": 0.0,
-        "SF_FO2_FO": 0.0, "SF_FO_FO2": 0.0, "SF_FO2": 0.0,
-        
-        ###* Metastable species
-        "SF_O2fast_SO": 0.0, "SF_Ofast_SO": 0.0, "SF_O2fast_S": 0.0,  "SF_Ofast_S": 0.0,
-        "SF_Ofast_Sdb": 0.0, "SF_Ofast_SOdb": 0.0, "SF_O2fast_Sdb": 0.0, "SF_O2fast_SOdb": 0.0,
-        "SF_O_Sdb": 0.0, "SF_O_SOdb": 0.0, "SF_FO_SOdb": 0.0, "SF_FO_Sdb": 0.0,
+            ###* Atomic oxygen
+            "SF_O_F": 1.0, "SF_O_S": 1.0, "SF_O_SO": 1.0, "SF_O_FO": 1.0,
+            "SF_FO_S": 1.0, "SF_FO_SO": 1.0, "SF_FO_FO": 1.0, "SF_FO": 1.0,
+            
+            ###* Molecular oxygen
+            "SF_O2_F": 1.0, "SF_O2_FO": 1.0, "SF_O2_FO2": 1.0, "SF_O_FO2": 1.0,
+            "SF_FO2_FO": 1.0, "SF_FO_FO2": 1.0, "SF_FO2": 1.0,
+            
+            ###* Metastable species
+            "SF_O2fast_SO": 0.0, "SF_Ofast_SO": 0.0, "SF_O2fast_S": 0.0,  "SF_Ofast_S": 0.0,
+            "SF_Ofast_Sdb": 0.0, "SF_Ofast_SOdb": 0.0, "SF_O2fast_Sdb": 0.0, "SF_O2fast_SOdb": 0.0,
+            "SF_O_Sdb": 0.0, "SF_O_SOdb": 0.0, "SF_FO_SOdb": 0.0, "SF_FO_Sdb": 0.0,
     }
+
     
     
-    file_input_data = "Experimental_data_TD.hdf5"
-    output_file = "results_TD.hdf5"
+    file_input_data = "Experimental_data_Paper.hdf5"
+    output_file = "results_PaperBase.hdf5"
     
     output_file = os.path.join("simulations", output_file)
     
@@ -53,19 +54,19 @@ if __name__ == "__main__":
     
     #########* Energy barriers and transition rates
     energy_dict = { # kJ/mol and s^-1
-        "E_O_F": 0.0, "E_O_S": 0.0, "E_O_SO": 17.5, "E_O_FO": 0.0, 
-        "E_FO_SO": 17.5, "E_FO_FO":0.0, "E_di_O": 15.0, "E_de_O": 30.0,
-        
-        "E_O2_F": 0.0, "E_O2_FO": 0.0, "E_O2_FO2": 0.0, "E_O_FO2": 15.0, 
-        "E_FO2_FO": 0.0, "E_FO_FO2": 0.0, "E_di_O2": 15.0, "E_de_O2": 17.5,
-        
-        "E_O2fast_SO": 0.0, "E_O2fast_S": 0.0, "E_O2fast_SOdb": 0.0, "E_O2fast_Sdb": 0.0, "E_Ofast_Sdb": 0.0,
-        "E_Ofast_SOdb": 0.0, "E_O_Sdb": 0.0, "E_O_SOdb": 0.0, "E_F_SOdb": 0.0, "E_FO_SOdb": 0.0,
-        "ED_db": 14.999,
-        
-        "nu_D": 1.0e13, "nu_d": 1.0e15,
-        "Emin": 2.90, # eV
-        "Ealpha": 3400.0, # K
+            "E_O_F": 0.0, "E_O_S": 0.0, "E_O_SO": 15.0, "E_O_FO": 0.0, 
+            "E_FO_SO": 20.0, "E_FO_FO":0.0, "E_di_O": 15.0, "E_de_O": 30.0,
+            
+            "E_O2_F": 0.0, "E_O2_FO": 0.0, "E_O2_FO2": 0.0, "E_O_FO2": 0.0, 
+            "E_FO2_FO": 0.0, "E_FO_FO2": 0.0, "E_di_O2": 15.0, "E_de_O2": 17.5,
+            
+            "E_O2fast_SO": 0.0, "E_O2fast_S": 0.0, "E_O2fast_SOdb": 0.0, "E_O2fast_Sdb": 0.0, "E_Ofast_Sdb": 0.0,
+            "E_Ofast_SOdb": 0.0, "E_O_Sdb": 0.0, "E_O_SOdb": 0.0, "E_F_SOdb": 0.0, "E_FO_SOdb": 0.0,
+            "ED_db": 14.999,
+            
+            "nu_D": 1.0e13, "nu_d": 1.0e15,
+            "Emin": 2.90, # eV
+            "Ealpha": 3400.0, # K
     }
     
     

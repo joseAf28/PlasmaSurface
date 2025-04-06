@@ -2,6 +2,10 @@
 
 old_version2/
 
+mains/
+
+simulations/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

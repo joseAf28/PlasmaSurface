@@ -28,8 +28,6 @@ class ErrorPropagation(ABC):
         pass
     
     
-    
-
     def generate_samples(self, n_samples, mean_input_dict, std_input_dict):
         samples = np.zeros(n_samples, dtype=dict)
         for i in range(n_samples):
@@ -68,7 +66,7 @@ class ErrorPropagation(ABC):
         return samples
     
     
-    def sampler_error_propagation(self, std_input_ratios_dict, n_samples):
+    def sampler_error_propagation(self, std_input_ratios_dict, n_samples, stratified=False):
         
         nb_exp_points = self.input_data_dict.shape[0]
         
@@ -81,7 +79,10 @@ class ErrorPropagation(ABC):
             mean_input_dict = self.input_data_dict[i]    
             std_input_dict = {key: std_input_ratios_dict[key] * self.input_data_dict[i][key] for key in std_input_ratios_dict.keys()}
         
-            samples = self.generate_samples(n_samples, mean_input_dict, std_input_dict)
+            if stratified:
+                samples = self.generate_stratified_samples(n_samples, mean_input_dict, std_input_dict)
+            else:
+                samples = self.generate_samples(n_samples, mean_input_dict, std_input_dict)
             
             for j in range(n_samples):
                 
@@ -101,3 +102,57 @@ class ErrorPropagation(ABC):
         pbar.close()
         
         return prob_dist_vec
+    
+    
+    def compute_mean_func_output(self, func, std_input_ratios_dict, counter):
+        ### too slow in the case of many parameters
+        
+        exp_samples = self.input_data_dict[counter]
+        
+        variables = len(std_input_ratios_dict)
+        mean_input_dict = exp_samples.copy()
+        std_input_dict = {key: std_input_ratios_dict[key] * exp_samples[key] for key in std_input_ratios_dict.keys()}
+        
+        keys_list = list(std_input_ratios_dict.keys())
+        
+        mean_input_array = np.array([mean_input_dict[key] for key in keys_list])
+        std_input_array = np.array([std_input_dict[key] for key in keys_list])
+        
+        
+        def pdf_function(*x):
+            prod_func = 1.0
+            for i in range(variables):
+                prod_func *= sp.stats.norm.pdf(x[i], loc=mean_input_array[i], scale=std_input_array[i])
+            
+            return prod_func
+        
+        def integrand(*x):
+            
+            pdf_value = pdf_function(*x)
+            
+            sample_mod_dict = {key: x[i] for i, key in enumerate(keys_list)}
+            exp_samples.update(sample_mod_dict)
+            
+            energy_dict_new = self.modify_energy_dict(counter)
+            
+            _, recProb_aux, _, sucess = self.system.solve_system(exp_samples, energy_dict_new, solver="fixed_point", max_time=self.max_time)
+            
+            if sucess == True:
+                prob_value = np.sum(recProb_aux)
+            else: 
+                logging.warning(f"Simulation failed for index {counter}. Assigning high loss.")
+                prob_value = 0.0
+                
+            return pdf_value * func(prob_value)
+            
+        
+        bounds = [[mean_input_dict[key] - 4 * std_input_dict[key], mean_input_dict[key] + 4 * std_input_dict[key]] for key in keys_list]
+        
+        # Perform the integration
+        start_time = time.time()
+        integral_value, error = sp.integrate.nquad(integrand, bounds)
+        end_time = time.time()
+        
+        logging.info(f"Integration time: {end_time - start_time:.2f} seconds")
+        
+        return integral_value, error

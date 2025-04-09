@@ -53,7 +53,7 @@ $$
 
 **Observable ($\gamma$)** is computed as:
 $$
-\gamma \equiv \hat{O} = \hat{T}(\theta, \vec{x}) \vec{S}^* 
+\gamma \equiv \hat{O} = \hat{T}(\theta, \vec{x}) \vec{S}^*
 $$
 
 
@@ -90,25 +90,34 @@ This hybrid method effectively balances exploration and exploitation, improving 
 This module evaluates the uncertainty of model predictions resulting from experimental uncertainties in input parameters.
 
 Assume a set of independent random variables:
+
 $$
 X = \{X_1, X_2, \dots, X_n \}
 $$
+
 with knowns pdfs $P(X_1), P(X_2), \dots, P(X_n)$. If we assume that the inputs are independent, the joint distribution is given by:
+
 $$
 P(X_1, X_2, \dots, X_n) = \prod_{i=1}^n P(X_i)
 $$
 The deterministic relationship between inputs and observable ($\gamma$) is defined as:
+
 $$
 \gamma = f(X_1, X_2, \dots, X_n)
 $$
+
 And so it defines the conditional probability $P(\gamma|X_1, \dots X_n)$, which in our deterministic case is given by:
+
 $$
 P(\gamma|X_1, \dots, X_n) = \delta (\gamma - f(X_1, X_2, \dots, X_n))
 $$
+
 The resulting PDF for $\gamma$ is calculated as:
+
 $$
 P(\gamma) = \int_{x_1}\dots \int_{x_n} \delta(\gamma - f(x_1, \dots, x_n)) P(x_1, \dots, x_n) dx_1 \dots dx_n
 $$
+
 This integral is numerically estimated using the **Monte Carlo stratified sampling method**.
 
 

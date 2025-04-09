@@ -44,29 +44,38 @@ class ErrorPropagation(ABC):
         quantiles = np.linspace(0, 1, n_samples+2)[1:-1]  # avoid 0 and 1 for stability
         # Add a small random offset within each stratum
         delta = 1/(n_samples+1)
-        u_strat = quantiles + (np.random.rand(n_samples)-0.5) * delta
+        # u_strat = quantiles + (np.random.rand(n_samples)-0.5) * delta
+        u_strat = quantiles + 0.1*(np.random.rand(n_samples)-0.5) * delta
         return sp.stats.norm.ppf(u_strat, loc=mean, scale=std)
     
     
-    def generate_stratified_samples(self, n_samples, mean_input_dict, std_input_dict):
-        samples = np.zeros(n_samples, dtype=dict)
-        for i in range(n_samples):
-            sample = mean_input_dict.copy()
-            for key in std_input_dict.keys():
-                sample[key] = np.abs(self.stratified_samples((mean_input_dict[key], std_input_dict[key]), 1)[0])
+    def generate_stratified_samples(self, n_samples, mean_input_dict, std_input_dict, seed=None):
+        if seed is not None:
+            np.random.seed(seed)
             
-            samples[i] = sample
+        samples = []
         
-        samples_array = np.array([list(sample.values()) for sample in samples])
-        samples_array_shuffled = samples_array.copy()
-        np.random.shuffle(samples_array_shuffled)
-        samples = np.array([dict(zip(mean_input_dict.keys(), sample)) for sample in samples_array_shuffled], \
-                            dtype=dict)
+        for _ in range(n_samples):
+            sample = {}
+            for key in mean_input_dict:
+                mean = mean_input_dict[key]
+                if key in std_input_dict:
+                    std = std_input_dict[key]
+                    value = np.abs(self.stratified_samples((mean, std), 1)[0])
+                else:
+                    value = mean
+                sample[key] = value
+            samples.append(sample)
         
+        np.random.shuffle(samples)
         return samples
     
     
+    
     def sampler_error_propagation(self, std_input_ratios_dict, n_samples, stratified=False):
+        
+        ### stratified = False: unbiased estimator
+        ### stratified = True: biased estimator, better for the mean estimator
         
         nb_exp_points = self.input_data_dict.shape[0]
         

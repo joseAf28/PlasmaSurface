@@ -306,7 +306,8 @@ class SurfaceKineticsSimulator():
         ### Improve initial guess by running using the stiff solver
         #### BDF method
         
-        short_time = np.linspace(self.timeSpace[0], self.timeSpace[min(100, len(self.timeSpace)-1)], 100)
+        # short_time = np.linspace(self.timeSpace[0], self.timeSpace[min(100, len(self.timeSpace)-1)], 100)
+        short_time = np.linspace(self.timeSpace[0], self.timeSpace[min(30, len(self.timeSpace)-1)], 30)
         
         start_time = time.time()
         events = None
